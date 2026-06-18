@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NEON · AI chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0b0b1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Courier New', monospace;
+            margin: 0;
+            padding: 16px;
+        }
+
+        .chatbot {
+            width: 100%;
+            max-width: 480px;
+            height: 600px;
+            background: #13132b;
+            border-radius: 36px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3), 0 0 60px rgba(255, 0, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .header {
+            background: #1a1a3a;
+            padding: 14px 20px;
+            border-bottom: 1px solid #33ffff55;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px #00ffff33, inset 0 0 8px #ff00ff22;
+        }
+
+        .header h2 {
+            color: #b7f0ff;
+            font-weight: 400;
+            font-size: 1.3rem;
+            letter-spacing: 3px;
+            text-shadow: 0 0 8px #00ffff, 0 0 20px #ff00ffaa;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .header-actions button {
+            background: transparent;
+            border: none;
+            color: #b0e0ff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.2s;
+            text-shadow: 0 0 6px cyan;
+            width: 32px;
+            height: 32px;
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-actions button:hover {
+            background: #2a2a5a;
+            color: #fff;
+            box-shadow: 0 0 20px #ff44ff, 0 0 40px #44ffff;
+            transform: scale(1.08);
+        }
+
+        .header-actions .close-btn:hover {
+            color: #ff7b7b;
+            box-shadow: 0 0 20px #ff4444, 0 0 40px #ff8800;
+        }
+
+        .header-actions .delete-btn:hover {
+            color: #ffaa44;
+            box-shadow: 0 0 20px #ff8800, 0 0 40px #ff4400;
+        }
+
+        .messages {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #0e0e24;
+            scroll-behavior: smooth;
+            border-top: 1px solid #2f2f5a;
+            border-bottom: 1px solid #2f2f5a;
+            box-shadow: inset 0 0 30px #00000088;
+        }
+
+        .messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: #19193a;
+            border-radius: 12px;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: #44ffff;
+            border-radius: 12px;
+            box-shadow: 0 0 18px #00ffff;
+        }
+
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: #ff66ff;
+            box-shadow: 0 0 24px #ff44ff;
+        }
+
+        .message {
+            max-width: 82%;
+            padding: 12px 18px;
+            border-radius: 24px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            background: #1f1f47;
+            color: #d0eaff;
+            box-shadow: 0 0 10px #33ccff33, 0 0 4px #ff00ff44;
+            border: 1px solid #33ccff44;
+            animation: glowPulse 1.8s infinite alternate;
+        }
+
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 6px #33ccff33, 0 0 4px #ff00ff22; }
+            100% { box-shadow: 0 0 18px #66ffff66, 0 0 14px #ff66ff55; }
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: #141433;
+            border-left: 3px solid #66ffff;
+            border-bottom: 1px solid #66ffff55;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #1a1a4a;
+            border-right: 3px solid #ff66ff;
+            border-bottom: 1px solid #ff66ff55;
+            text-align: right;
+        }
+
+        .message .sender {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+            color: #9bbaff;
+        }
+
+        .message.user .sender {
+            color: #ffaaff;
+        }
+
+        .message .typing-indicator {
+            display: inline-block;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+            padding: 14px 18px 18px 18px;
+            background: #11112b;
+            border-top: 1px solid #33ffff44;
+            flex-shrink: 0;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .input-section input {
+            flex: 1;
+            background: #1e1e42;
+            border: 1px solid #44ccff55;
+            border-radius: 60px;
+            padding: 14px 18px;
+            font-size: 0.95rem;
+            color: #e6f7ff;
+            outline: none;
+            transition: 0.3s;
+            box-shadow: inset 0 0 12px #000000aa, 0 0 6px #00ccff33;
+            font-family: 'Segoe UI', monospace;
+        }
+
+        .input-section input::placeholder {
+            color: #7799bb;
+            letter-spacing: 0.5px;
+            font-weight: 300;
+        }
+
+        .input-section input:focus {
+            border-color: #ff66ff;
+            box-shadow: 0 0 24px #ff44ff66, inset 0 0 8px #44ffff66;
+            background: #19194a;
+        }
+
+        .input-section input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .input-section button {
+            background: #222255;
+            border: none;
+            border-radius: 60px;
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #d0f0ff;
+            cursor: pointer;
+            transition: 0.25s;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 8px cyan;
+            box-shadow: 0 0 16px #00aaff55, 0 0 6px #ff44ff33;
+            border: 1px solid #55ddff88;
+            background: linear-gradient(145deg, #1f1f5a, #14143a);
+            flex-shrink: 0;
+        }
+
+        .input-section button:hover:not(:disabled) {
+            background: #2f2f7a;
+            box-shadow: 0 0 40px #ff44ffaa, 0 0 60px #44ffffaa;
+            color: white;
+            transform: scale(1.02);
+            border-color: #ff99ff;
+        }
+
+        .input-section button:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+
+        .input-section button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .chatbot.minimized .messages,
+        .chatbot.minimized .input-section {
+            display: none;
+        }
+
+        .chatbot.minimized {
+            height: 72px;
+            min-height: 72px;
+            max-width: 380px;
+            border-radius: 60px;
+            transition: 0.3s;
+            box-shadow: 0 0 40px #00ffff44;
+        }
+
+        .chatbot.minimized .header {
+            border-radius: 60px;
+            border-bottom: none;
+        }
+
+        .chatbot.closed {
+            display: none;
+        }
+
+        @media (max-width: 500px) {
+            .chatbot {
+                max-width: 100%;
+                height: 92vh;
+                border-radius: 28px;
+            }
+            .header h2 {
+                font-size: 1rem;
+            }
+            .input-section button {
+                padding: 12px 18px;
+                font-size: 0.9rem;
+            }
+            .header-actions {
+                gap: 8px;
+            }
+            .header-actions button {
+                width: 28px;
+                height: 28px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chatbot" id="chatbot">
+        <div class="header">
+            <h2>✦ MUSKAN AI ✦</h2>
+            <div class="header-actions">
+                <button id="deleteBtn" class="delete-btn" title="clear chat">🗑</button>
+                <button id="minimizeBtn" title="minimize">─</button>
+                <button id="closeBtn" class="close-btn" title="close">✕</button>
+            </div>
+        </div>
+
+        <div class="messages" id="messagesContainer">
+            <div class="message bot" id="initialMessage">
+                <div class="sender">✦ BOT</div>
+                <span>⚡ neon AI ready · ask me anything.</span>
+            </div>
+        </div>
+
+        <div class="input-section">
+            <input type="text" id="userInput" placeholder="type your message..." autofocus />
+            <button id="sendBtn">➤ SEND</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            "use strict";
+
+            // ----- CONFIG -----
+            const API_KEY = " Paste your Api key...........................";
+            const MODEL = "deepseek/deepseek-chat";
+
+            // DOM refs
+            const chatbot = document.getElementById('chatbot');
+            const messagesContainer = document.getElementById('messagesContainer');
+            const userInput = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const minimizeBtn = document.getElementById('minimizeBtn');
+            const closeBtn = document.getElementById('closeBtn');
+            const deleteBtn = document.getElementById('deleteBtn');
+            const initialMessage = document.getElementById('initialMessage');
+
+            let isWaiting = false;
+
+            // ----- add message to UI -----
+            function addMessage(text, sender, isTyping = false) {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `message ${sender}`;
+                const senderLabel = sender === 'bot' ? '✦ BOT' : '⚡ YOU';
+                let content = text;
+                if (isTyping) {
+                    content = `<span class="typing-indicator">●●●</span>`;
+                }
+                msgDiv.innerHTML = `<div class="sender">${senderLabel}</div><span>${content}</span>`;
+                messagesContainer.appendChild(msgDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                return msgDiv;
+            }
+
+            // ----- clear all messages except initial bot message -----
+            function clearChat() {
+                // Remove all messages except the initial one
+                const messages = messagesContainer.querySelectorAll('.message');
+                messages.forEach(msg => {
+                    if (msg !== initialMessage) {
+                        msg.remove();
+                    }
+                });
+                
+                // If initial message was removed somehow, re-add it
+                if (!document.getElementById('initialMessage')) {
+                    const newInitial = document.createElement('div');
+                    newInitial.className = 'message bot';
+                    newInitial.id = 'initialMessage';
+                    newInitial.innerHTML = `<div class="sender">✦ BOT</div><span>⚡ neon AI ready · ask me anything.</span>`;
+                    messagesContainer.appendChild(newInitial);
+                }
+                
+                // Reset typing indicator if present
+                if (typingElement) {
+                    typingElement.remove();
+                    typingElement = null;
+                }
+                
+                // Re-enable input if disabled
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                isWaiting = false;
+                
+                userInput.focus();
+            }
+
+            // ----- show typing indicator -----
+            let typingElement = null;
+            function showTyping() {
+                if (typingElement) return;
+                typingElement = addMessage('', 'bot', true);
+                userInput.disabled = true;
+                sendBtn.disabled = true;
+            }
+
+            function hideTyping() {
+                if (typingElement) {
+                    typingElement.remove();
+                    typingElement = null;
+                }
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+            }
+
+            // ----- call OpenRouter API -----
+            async function getAIResponse(userMessage) {
+                try {
+                    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${API_KEY}`,
+                            "HTTP-Referer": window.location.href,
+                            "X-OpenRouter-Title": "NEON Chatbot",
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            model: MODEL,
+                            messages: [
+                                { role: "user", content: userMessage }
+                            ]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(`API error (${response.status}): ${errText}`);
+                    }
+
+                    const data = await response.json();
+                    if (data.choices && data.choices.length > 0) {
+                        return data.choices[0].message.content;
+                    } else {
+                        throw new Error("Unexpected API response format");
+                    }
+                } catch (error) {
+                    console.error("OpenRouter fetch error:", error);
+                    return `⚠️ sorry, i'm having trouble thinking. error: ${error.message}`;
+                }
+            }
+
+            // ----- process user message -----
+            async function handleUserMessage() {
+                const raw = userInput.value.trim();
+                if (raw === '' || isWaiting) return;
+
+                // Add user message
+                addMessage(raw, 'user');
+                userInput.value = '';
+                isWaiting = true;
+
+                // Show typing indicator
+                showTyping();
+
+                try {
+                    const reply = await getAIResponse(raw);
+                    hideTyping();
+                    addMessage(reply, 'bot');
+                } catch (error) {
+                    hideTyping();
+                    addMessage(`⚠️ oops: ${error.message}`, 'bot');
+                } finally {
+                    isWaiting = false;
+                }
+            }
+
+            // ----- event listeners -----
+            sendBtn.addEventListener('click', handleUserMessage);
+
+            userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleUserMessage();
+                }
+            });
+
+            // Delete / Clear chat
+            deleteBtn.addEventListener('click', clearChat);
+
+            // minimize / close
+            minimizeBtn.addEventListener('click', () => {
+                chatbot.classList.toggle('minimized');
+                if (!chatbot.classList.contains('minimized')) {
+                    setTimeout(() => userInput.focus(), 100);
+                }
+            });
+
+            closeBtn.addEventListener('click', () => {
+                chatbot.classList.add('closed');
+            });
+
+            // double-click header to reopen if closed
+            const header = document.querySelector('.header');
+            header.addEventListener('dblclick', () => {
+                if (chatbot.classList.contains('closed')) {
+                    chatbot.classList.remove('closed');
+                    chatbot.classList.remove('minimized');
+                    setTimeout(() => userInput.focus(), 150);
+                }
+            });
+
+            // click header when minimized to expand
+            header.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                if (chatbot.classList.contains('minimized') && !chatbot.classList.contains('closed')) {
+                    chatbot.classList.remove('minimized');
+                    setTimeout(() => userInput.focus(), 150);
+                }
+            });
+
+            // focus on load
+            window.addEventListener('load', () => {
+                setTimeout(() => userInput.focus(), 300);
+            });
+
+            console.log('✨ NEON AI ready · using OpenRouter deepseek/deepseek-chat');
+            console.log('🗑 Delete button clears all messages');
+        })();
+    </script>
+</body>
+</html>
